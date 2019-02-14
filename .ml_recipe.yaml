@@ -1,7 +1,8 @@
-command: 'python single_page.py'
+command: 'python main.py'
 data_volume: 6132366217052160
-data_query: '@version:fad42034286a2cfd3943f9ca46dae3230bcc2087 @datapoint_by:data_point_id AND data_point_id:1'
+data_query: '@version:d1c97413d9843a27bc37a7e533e9657a6c6d6053 @datapoint_by:data_point_id AND data_point_id:1'
 gpu: true
 #image: missinglinkai/tensorflow:latest-gpu-py3
-org: 'missinglink'
-project: '5687160778784768'
+org: 'missinglinkdemo'
+project: '5109349617762304'
+
