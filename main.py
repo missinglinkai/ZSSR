@@ -40,7 +40,7 @@ LAYERS_NUM = 6
 # No. of scaling steps. 6 is best value from paper.
 NB_SCALING_STEPS = 1
 # No. of LR_HR pairs
-EPOCHS = NB_PAIRS = 2000
+EPOCHS = NB_PAIRS = 200
 # Default crop size (in the paper: 128*128*3)
 W_CROP = H_CROP = 64
 # Momentum # default is 0.9 # 0.86 seems to give lowest loss *tested from 0.85-0.95
@@ -70,7 +70,7 @@ NOISE_FLAG = True
 # Mean pixel noise added to lr sons
 NOISY_PIXELS_STD = 30
 # Save augmentations
-SAVE_AUG = True
+SAVE_AUG = False
 # If there's a ground truth image. Add to parse.
 GROUND_TRUTH = False
 # If there's a baseline image. Add to parse.
@@ -168,11 +168,8 @@ def preprocess(image, scale_fact, scale_fact_inter, i):
     if SAVE_AUG and i%50==0:
         dir_name = os.path.join(output_paths, 'Aug/')
         # Create target Directory if don't exist
-        if not os.path.exists(dir_name):
-            os.mkdir(dir_name)
-            print("Directory ", dir_name, " Created ")
-        else:
-            print("Directory ", dir_name, " already exists")
+        mk_dir(dir_name=dir_name)
+
         cv2.imwrite(output_paths + '/Aug/' + str(SR_FACTOR) + '_' + str(i) + 'lr.png', cv2.cvtColor(lr, cv2.COLOR_RGB2BGR), params=[CV_IMWRITE_PNG_COMPRESSION])
         cv2.imwrite(output_paths + '/Aug/' + str(SR_FACTOR) + '_' + str(i) + 'hr.png', cv2.cvtColor(hr, cv2.COLOR_RGB2BGR), params=[CV_IMWRITE_PNG_COMPRESSION])
 
@@ -418,8 +415,9 @@ def select_first_dir(*dirs):
 def select_file(img_type):
     import glob
 
-    dir_path = select_first_dir('/data', './images')
+    dir_path = select_first_dir('/data', './ZSSR_Images')
     path = os.path.join(dir_path, "*.png")
+    print("path choice:",path)
     image_list = glob.glob(path)
     print("image_list:", image_list)
     # Choose Ground Truth image or Downsampled
@@ -435,7 +433,12 @@ def select_file(img_type):
 
     return image_path
 
-
+def mk_dir(dir_name):
+    if not os.path.exists(dir_name):
+        os.mkdir(dir_name)
+        print("Directory ", dir_name, " Created ")
+    else:
+        print("Directory ", dir_name, " already exists")
 # main
 if __name__ == '__main__':
     np.random.seed(0)
@@ -444,6 +447,8 @@ if __name__ == '__main__':
 
     # Path for Data and Output directories on Docker
     output_paths = select_first_dir('/output', './output')
+    if (output_paths == './output'):
+        mk_dir(dir_name='./output')
     file_name = select_file(img_type=0)
 
     # Provide an alternative to provide MissingLinkAI credential
