@@ -39,7 +39,7 @@ Install dependency libraries:
 pip install -r requirements.txt
 ```
 ## Run
-Sign up to [MissingLink](https://missinglink.ai/)
+Sign up to [MissingLink](https://missinglink.ai/) to view the project on our UI.
 
 ### Local
 ```bash
