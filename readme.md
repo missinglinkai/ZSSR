@@ -18,7 +18,7 @@ First, updating pip is recommended:
 ```bash
 pip install -U pip
 ```
-You are also strongly recommended to use [virtualenv]https://virtualenv.pypa.io/en/stable/ to create a sandboxed environment for individual Python projects:
+You are also strongly recommended to use [virtualenv](https://virtualenv.pypa.io/en/stable/) to create a sandboxed environment for individual Python projects:
 ```bash
 pip install virtualenv
 ```
