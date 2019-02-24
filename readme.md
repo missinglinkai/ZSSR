@@ -49,7 +49,13 @@ python main.py
 Follow instructions here:
 [Resource Management](https://missinglink.ai/docs/resource-management/introduction/)
 
-After setting up Resource Management simply run:
+After setting up Resource Management:
+
+Authenticate your username from the CLI:
+```bash 
+ml auth init
+```
+Then simply run the project:
 ```bash
 ml run xp
 ```
