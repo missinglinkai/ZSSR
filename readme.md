@@ -51,4 +51,5 @@ Follow instructions here:
 
 After setting up Resource Management simply run:
 ```bash
-ml run xp```
+ml run xp
+```
