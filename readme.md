@@ -15,7 +15,7 @@ You need Python 3.6.8 on your system to run this example.
 
 To install the dependency:
 
-First updating pip is recommended:
+First, updating pip is recommended:
 ```bash
 pip install -U pip
 ```
