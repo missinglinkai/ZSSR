@@ -42,7 +42,7 @@ NB_SCALING_STEPS = 1
 # No. of LR_HR pairs
 EPOCHS = NB_PAIRS = 200
 # Default crop size (in the paper: 128*128*3)
-W_CROP = H_CROP = 64
+CROP_SIZE = [32,64,96,128]
 # Momentum # default is 0.9 # 0.86 seems to give lowest loss *tested from 0.85-0.95
 BETA1 = 0.90  # 0.86
 # Adaptive learning rate
@@ -129,15 +129,17 @@ def preprocess(image, scale_fact, scale_fact_inter, i):
     hr = cv2.resize(image, None, fx=scale_fact, fy=scale_fact, interpolation=cv2.INTER_CUBIC)
     # Crop the HR father to reduce computation cost and set the training independent from image size
     if CROP_FLAG:
-        if (hr.shape[0] > H_CROP):
-            x0 = np.random.randint(0, np.abs(H_CROP - hr.shape[0]))
-            h = H_CROP
+        h_crop = w_crop = np.random.choice(CROP_SIZE)
+        print("h_crop, w_crop:", h_crop, w_crop)
+        if (hr.shape[0] > h_crop):
+            x0 = np.random.randint(0, np.abs(h_crop - hr.shape[0]))
+            h = h_crop
         else:
             x0 = np.random.randint(0, np.int(hr.shape[0] / 2))
             h = np.random.randint((np.int(hr.shape[0] / 2 + 1)), (np.int(hr.shape[0])))
-        if (hr.shape[1] > W_CROP):
-            x1 = np.random.randint(0, np.abs(W_CROP - hr.shape[1]))
-            w = W_CROP
+        if (hr.shape[1] > w_crop):
+            x1 = np.random.randint(0, np.abs(w_crop - hr.shape[1]))
+            w = w_crop
         else:
             x1 = np.random.randint(0, np.int(hr.shape[1] / 2))
             w = np.random.randint((np.int(hr.shape[1] / 2 + 1)), (np.int(hr.shape[1])))
@@ -412,10 +414,10 @@ def select_first_dir(*dirs):
     return d
 
 
-def select_file(img_type):
+def select_file(img_type,subdir):
     import glob
 
-    dir_path = select_first_dir('/data', './ZSSR_Images')
+    dir_path = select_first_dir('/data', './ZSSR_Images' + subdir)
     path = os.path.join(dir_path, "*.png")
     print("path choice:",path)
     image_list = glob.glob(path)
@@ -445,17 +447,12 @@ if __name__ == '__main__':
     if keras.backend == 'tensorflow':
         keras.backend.set_image_dim_ordering('tf')
 
-    # Path for Data and Output directories on Docker
-    output_paths = select_first_dir('/output', './output')
-    if (output_paths == './output'):
-        mk_dir(dir_name='./output')
-    file_name = select_file(img_type=0)
-
     # Provide an alternative to provide MissingLinkAI credential
     parser = argparse.ArgumentParser()
-    parser.add_argument('--sr-factor', type=int)
+    parser.add_argument('--srFactor', type=int)
     parser.add_argument('--epochs', type=int, default=EPOCHS)
-    parser.add_argument('--filepath')
+    #parser.add_argument('--filepath', type=str)
+    parser.add_argument('--subdir', type=str, default="")
     parser.add_argument('--filters', type=int, default=FILTERS)
     parser.add_argument('--activation', default=ACTIVATION)
     parser.add_argument('--shuffle', default=SHUFFLE)
@@ -466,11 +463,13 @@ if __name__ == '__main__':
     parser.add_argument('--groundTruth', default=GROUND_TRUTH)
     parser.add_argument('--baseline', default=BASELINE)
     parser.add_argument('--flip', default=FLIP_FLAG)
+    parser.add_argument('--noiseFlag', default=False)
     parser.add_argument('--project')
     # Override credential values if provided as arguments
     args = parser.parse_args()
-    file_name = args.filepath or file_name
-    SR_FACTOR = args.sr_factor or SR_FACTOR
+    #file_name = args.filepath or file_name
+    subdir = args.subdir
+    SR_FACTOR = args.srFactor or SR_FACTOR
     FILTERS = args.filters or FILTERS
     EPOCHS = args.epochs or EPOCHS
     ACTIVATION = args.activation or ACTIVATION
@@ -482,9 +481,19 @@ if __name__ == '__main__':
     GROUND_TRUTH = args.groundTruth or GROUND_TRUTH
     BASELINE = args.baseline or BASELINE
     FLIP_FLAG = args.flip or FLIP_FLAG
+    NOISE_FLAG = args.noiseFlag or NOISE_FLAG
     # We're making sure These parameters are equal, in case of an update from the parser.
     NB_PAIRS = EPOCHS
     EPOCHS_DROP = np.ceil((NB_STEPS * EPOCHS) / NB_SCALING_STEPS)
+
+
+    # Path for Data and Output directories on Docker
+    output_paths = select_first_dir('/output', './output')
+    if (output_paths == './output'):
+        mk_dir(dir_name='./output')
+    img_type = 0
+    file_name = select_file(img_type, subdir)
+
     # Load image from data volumes
     image, image_mean = load_img(file_name)
 
@@ -493,7 +502,7 @@ if __name__ == '__main__':
     missinglink_callback.set_properties(
         display_name='Keras neural network',
         description='2D fully convolutional neural network for single image super resolution')
-    missinglink_callback.set_hyperparams(crop=[W_CROP, H_CROP],
+    missinglink_callback.set_hyperparams(crop=[CROP_SIZE],
                                          activation=ACTIVATION, sr_factor=SR_FACTOR,
                                          filters=FILTERS, noise_level_LR = NOISY_PIXELS_STD)
 

@@ -2,4 +2,7 @@
 /Images
 /Samples
 /code
+/output
 checkcv2.py
+.DS_Store
+.idea/
