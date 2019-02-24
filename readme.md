@@ -48,3 +48,7 @@ python main.py
 ### MissingLink with Resource Management
 Follow instructions here:
 [Resource Management](https://missinglink.ai/docs/resource-management/introduction/)
+
+After setting up Resource Management simply run:
+```bash
+ml run xp```
