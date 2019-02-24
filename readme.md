@@ -40,6 +40,10 @@ pip install -r requirements.txt
 ```
 ## Run
 
+### Local
 ```bash
 python main.py
 ```
+### MissingLink with Resource Management
+Follow instructions here:
+[Resource Management](https://missinglink.ai/docs/resource-management/introduction/)
