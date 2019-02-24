@@ -14,8 +14,12 @@ What things you need to install the software and how to install them
 You need Python 3.6.8 on your system to run this example.
 
 To install the dependency:
-You are strongly recommended to use virtualenv to create a sandboxed environment for individual Python projects:
 
+First updating pip is recommended:
+```bash
+pip install -U pip
+```
+You are also strongly recommended to use virtualenv to create a sandboxed environment for individual Python projects:
 ```bash
 pip install virtualenv
 ```
