@@ -24,10 +24,10 @@ pip install virtualenv
 ```
 
 Create and activate the virtual environment:
-
+```bash
 virtualenv .venv
 source .venv/bin/activate
-
+```
 ## Installing
 
 Clone this repo:
