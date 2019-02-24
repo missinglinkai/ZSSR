@@ -1,7 +1,7 @@
 # Zero Shot Super Resolution
 
 This repository contains a Keras implementation of the ZSSR project.
-It produces state of the art (SOTA) single image super resolution (SISR) out
+It produces state of the art (SOTA) single image super resolution (SISR) outputs
 for in-the-wild images with real world degragation and compression artifacts.
 
 ## Getting Started
@@ -14,7 +14,7 @@ You need Python 3.6.8 on your system to run this example.
 
 To install the dependency:
 
-First, updating pip is recommended:
+First, updating pip is advised:
 ```bash
 pip install -U pip
 ```
@@ -39,7 +39,23 @@ Install dependency libraries:
 pip install -r requirements.txt
 ```
 ## Run
+Sign up to [MissingLink](https://missinglink.ai/) to view the project on our UI.
 
+### Local
 ```bash
 python main.py
+```
+### MissingLink with Resource Management
+Follow instructions here:
+[Resource Management](https://missinglink.ai/docs/resource-management/introduction/)
+
+After setting up Resource Management:
+
+Authenticate your username from the CLI:
+```bash 
+ml auth init
+```
+Then simply run the project:
+```bash
+ml run xp
 ```
