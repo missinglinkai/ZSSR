@@ -1,7 +1,5 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-import logging
-
 import argparse
 import numpy as np
 import cv2
@@ -11,21 +9,20 @@ from keras.callbacks import LearningRateScheduler
 from keras.models import Model
 from keras.layers import Conv2D, Input
 from skimage.measure import compare_ssim as ssim
-import skimage
+from skimage.measure import compare_psnr
 import missinglink
 
 """
 Created on Wed Dec 19 15:37:28 2018
-
 @author: shahar
 """
 
 # scaling factor
-SR_FACTOR = 4
+SR_FACTOR = 2
 # Activation layer
 ACTIVATION = 'relu'
 # Data generator random ordered
-SHUFFLE = False
+SHUFFLE = True
 # scaling factors array order random or sorted
 SORT = True
 # Ascending or Descending: 'A' or 'D'
@@ -37,13 +34,13 @@ BATCH_SIZE = 1
 # Number of channels in signal
 NB_CHANNELS = 3
 # No. of NN filters per layer
-FILTERS = 64  # 64 on the paper
+FILTERS = 100  # 64 on the paper
 # Number of internal convolutional layers
 LAYERS_NUM = 6
 # No. of scaling steps. 6 is best value from paper.
 NB_SCALING_STEPS = 1
 # No. of LR_HR pairs
-EPOCHS = NB_PAIRS = 6000
+EPOCHS = NB_PAIRS = 2000
 # Default crop size (in the paper: 128*128*3)
 W_CROP = H_CROP = 64
 # Momentum # default is 0.9 # 0.86 seems to give lowest loss *tested from 0.85-0.95
@@ -69,22 +66,22 @@ SCALING_BIAS = 1
 BLUR_LOW = 0.4
 BLUR_HIGH = 0.95
 # Add noise or not to transformations
-NOISE_FLAG = False
+NOISE_FLAG = True
 # Mean pixel noise added to lr sons
-NOISY_PIXELS_STD = 10
+NOISY_PIXELS_STD = 30
 # Save augmentations
 SAVE_AUG = True
 # If there's a ground truth image. Add to parse.
 GROUND_TRUTH = False
 # If there's a baseline image. Add to parse.
-BASELINE = False
+BASELINE = True
 # png compression ratio: best quality
 CV_IMWRITE_PNG_COMPRESSION = 9
 
 # ---FUNCTIONS---#
 
 """ Load an image."""
-# TODO Delete change to number of channels. Check it and return it to main for the configuration of the model.
+# TODO Delete change to number of channels. Check it and return it to main for the configuration of the model. Delete mean.
 def load_img(file_name):
     # Load the image
     image = cv2.imread(file_name, cv2.IMREAD_UNCHANGED)
@@ -109,21 +106,24 @@ def load_img(file_name):
 
 
 # Add noise to lr sons
+""" 0 is the mean of the normal distribution you are choosing from
+    NOISY_PIXELS_STD is the standard deviation of the normal distribution
+    (row,col,ch) is the number of elements you get in array noise   """
 def add_noise(image):
     row, col, ch = image.shape
 
     noise = np.random.normal(0, NOISY_PIXELS_STD, (row, col, ch))
+    #Check image dtype before adding.
     noise = noise.astype('float32')
     # We clip negative values and set them to zero and set values over 255 to it.
     noisy = np.clip((image + noise), 0, 255)
-    # 0 is the mean of the normal distribution you are choosing from
-    # NOISY_PIXELS_STD is the standard deviation of the normal distribution
-    # (row,col,ch) is the number of elements you get in array noise
+
     return noisy
 
 
 def preprocess(image, scale_fact, scale_fact_inter, i):
-    #	print("scale_factors:",scale_fact,scale_fact_inter, i)
+
+    # scale down is sthe inverse of the intermediate scaling factor
     scale_down = 1 / scale_fact_inter
     # Create hr father by downscaling from the original image
     hr = cv2.resize(image, None, fx=scale_fact, fy=scale_fact, interpolation=cv2.INTER_CUBIC)
@@ -142,7 +142,6 @@ def preprocess(image, scale_fact, scale_fact_inter, i):
             x1 = np.random.randint(0, np.int(hr.shape[1] / 2))
             w = np.random.randint((np.int(hr.shape[1] / 2 + 1)), (np.int(hr.shape[1])))
         hr = hr[x0:x0 + h, x1:x1 + w]
-    # lr = lr[x0:x0+w , x1:x1+h]
 
     if FLIP_FLAG:
         # flip
@@ -158,35 +157,31 @@ def preprocess(image, scale_fact, scale_fact_inter, i):
 
     # hr is cropped and flipped then copies as lr
     # Blur lr son
-    #	print("hr shape:", hr.shape)
     lr = cv2.resize(hr, None, fx=scale_down, fy=scale_down, interpolation=cv2.INTER_CUBIC)
     # Upsample lr to the same size as hr
-    #	print("lr shape:", lr.shape)
     lr = cv2.resize(lr, (hr.shape[1], hr.shape[0]), interpolation=cv2.INTER_CUBIC)
 
     # Add gaussian noise to the downsampled lr
     if NOISE_FLAG:
         lr = add_noise(lr)
+    # Save every Nth augmentation to artifacts.
     if SAVE_AUG and i%50==0:
-        dirName = output_paths + '/Aug/'
+        dir_name = os.path.join(output_paths, 'Aug/')
         # Create target Directory if don't exist
-        if not os.path.exists(dirName):
-            os.mkdir(dirName)
-            print("Directory ", dirName, " Created ")
+        if not os.path.exists(dir_name):
+            os.mkdir(dir_name)
+            print("Directory ", dir_name, " Created ")
         else:
-            print("Directory ", dirName, " already exists")
-
-        cv2.imwrite(output_paths + '/Aug/' + str(eval('SR_FACTOR')) + '_' + str(eval('i')) + 'lr.png',
-                    cv2.cvtColor(lr, cv2.COLOR_RGB2BGR), params=[CV_IMWRITE_PNG_COMPRESSION])
-        cv2.imwrite(output_paths + '/Aug/' + str(eval('SR_FACTOR')) + '_' + str(eval('i')) + 'hr.png',
-                    cv2.cvtColor(hr, cv2.COLOR_RGB2BGR), params=[CV_IMWRITE_PNG_COMPRESSION])
+            print("Directory ", dir_name, " already exists")
+        cv2.imwrite(output_paths + '/Aug/' + str(SR_FACTOR) + '_' + str(i) + 'lr.png', cv2.cvtColor(lr, cv2.COLOR_RGB2BGR), params=[CV_IMWRITE_PNG_COMPRESSION])
+        cv2.imwrite(output_paths + '/Aug/' + str(SR_FACTOR) + '_' + str(i) + 'hr.png', cv2.cvtColor(hr, cv2.COLOR_RGB2BGR), params=[CV_IMWRITE_PNG_COMPRESSION])
 
     # Expand image dimension to 4D Tensors.
     lr = np.expand_dims(lr, axis=0)
     hr = np.expand_dims(hr, axis=0)
 
     """ For readability. This is an important step to make sure we send the
-    LR images as input to the NN and the HR images as targets"""
+    LR images as inputs and the HR images as targets to the NN"""
     X = lr
     y = hr
 
@@ -228,8 +223,8 @@ def image_generator(image, NB_PAIRS, BATCH_SIZE, NB_SCALING_STEPS):
     i = 0
     scale_fact, scale_fact_inter = s_fact(image, NB_PAIRS, NB_SCALING_STEPS)
     while True:
-        X, y = preprocess(image, scale_fact[i] + np.round(np.random.normal(0.0, 0.03), decimals=3), scale_fact_inter[i],
-                          i)
+        X, y = preprocess(image, scale_fact[i] + np.round(np.random.normal(0.0, 0.03), decimals=3),
+                          scale_fact_inter[i], i)
 
         i = i + 1
 
@@ -238,7 +233,6 @@ def image_generator(image, NB_PAIRS, BATCH_SIZE, NB_SCALING_STEPS):
 
 """Our learning rate decay function is a periodic step function. It makes a step
 every 'step_length' and resets itself back to the initial value every 'cycle'"""
-
 
 def step_decay(epochs):
     initial_lrate = INITIAL_LRATE
@@ -303,32 +297,35 @@ def ssim_calc(img1, img2, scaling_fact):
                    data_range=img1.max() - img1.min(), multichannel=True)
     print("SSIM:", ssim_sk)
 
+    return ssim_sk
 
-def psnr(img1, img2, scaling_fact):
+
+def psnr_calc(img1, img2, scaling_fact):
     # Get psnr measure from skimage lib
     PIXEL_MAX = 255.0
     PIXEL_MIN = 0.0
-    sk_psnr = skimage.measure.compare_psnr(img1, img2, data_range=PIXEL_MAX - PIXEL_MIN)
+    sk_psnr = compare_psnr(img1, img2, data_range=PIXEL_MAX - PIXEL_MIN)
+    print("PSNR:", sk_psnr)
 
     return sk_psnr
 
 
 """Check if a ground truth image exists, if so, compute metrics"""
 
-
 def metric_results(ground_truth_image, super_image):
     try:
         ground_truth_image
-        psnr_score = psnr(ground_truth_image, super_image, SR_FACTOR)
+        psnr_score = psnr_calc(ground_truth_image, super_image, SR_FACTOR)
         ssim_score = ssim_calc(ground_truth_image, super_image, SR_FACTOR)
 
         return psnr_score, ssim_score
     except NameError:
-        ground_truth_image = None
+        psnr_score = None
+        ssim_score = None
+        return psnr_score, ssim_score
 
 
 "This function creates a super resolution image and a simple interpolated image. returns and saves both of them."
-
 
 def predict_func(image):
     # Resize original image to super res size
@@ -353,10 +350,10 @@ def predict_func(image):
     interpolated_image = cv2.convertScaleAbs(interpolated_image)
 
     # Save super res image
-    cv2.imwrite(output_paths + '/' + str(eval('SR_FACTOR')) + '_super.png', cv2.cvtColor(super_image, cv2.COLOR_RGB2BGR),
+    cv2.imwrite(output_paths + '/' + str(SR_FACTOR) + '_super.png', cv2.cvtColor(super_image, cv2.COLOR_RGB2BGR),
                 params=[CV_IMWRITE_PNG_COMPRESSION])
     # Save bi-cubic enlarged image
-    cv2.imwrite(output_paths + '/' + str(eval('SR_FACTOR')) + '_super_size_interpolated.png',
+    cv2.imwrite(output_paths + '/' + str(SR_FACTOR) + '_super_size_interpolated.png',
                 cv2.cvtColor(interpolated_image, cv2.COLOR_RGB2BGR), params=[CV_IMWRITE_PNG_COMPRESSION])
 
     return super_image, interpolated_image
@@ -367,8 +364,6 @@ def accumulated_result(image):
     int_image = cv2.resize(image, None, fx=SR_FACTOR, fy=SR_FACTOR, interpolation=cv2.INTER_CUBIC)  # SR_FACTOR
     print("NN Input shape:", np.shape(int_image))
     super_image_accumulated = np.zeros(np.shape(int_image))
-    # Save enlarged image
-    #	cv2.imwrite(os.getcwd() +'/' + str(eval('SR_FACTOR')) + '_super_size_interpolated.png', cv2.cvtColor(interpolated_image, cv2.COLOR_RGB2BGR),params = [CV_IMWRITE_PNG_COMPRESSION ] )
     # Get super res image from the NN's output
     super_image_list = []
     for k in range(0, 8):
@@ -395,13 +390,13 @@ def accumulated_result(image):
     super_image_accumulated_avg = np.divide(super_image_accumulated, 8)
     # Normalize data type back to uint8
     super_image_accumulated_avg = cv2.convertScaleAbs(super_image_accumulated_avg)
-    cv2.imwrite(output_paths + '/' + str(eval('SR_FACTOR')) + '_super_image_accumulated_avg.png',
+    cv2.imwrite(output_paths + '/' + str(SR_FACTOR) + '_super_image_accumulated_avg.png',
                 cv2.cvtColor(super_image_accumulated_avg, cv2.COLOR_RGB2BGR), params=[CV_IMWRITE_PNG_COMPRESSION])
 
     super_image_accumulated_median = np.median(super_image_list, axis=0)
     ####	supsup = cv2.cvtColor(supsup, cv2.COLOR_RGB2BGR)
     super_image_accumulated_median = cv2.convertScaleAbs(super_image_accumulated_median)
-    cv2.imwrite(output_paths + '/' + str(eval('SR_FACTOR')) + '_super_image_accumulated_median.png',
+    cv2.imwrite(output_paths + '/' + str(SR_FACTOR) + '_super_image_accumulated_median.png',
                 cv2.cvtColor(super_image_accumulated_median, cv2.COLOR_RGB2BGR), params=[CV_IMWRITE_PNG_COMPRESSION])
 
     return super_image_accumulated_median, super_image_accumulated_avg
@@ -420,29 +415,25 @@ def select_first_dir(*dirs):
     return d
 
 
-def select_first_file():
+def select_file(img_type):
     import glob
 
     dir_path = select_first_dir('/data', './images')
+    path = os.path.join(dir_path, "*.png")
+    image_list = glob.glob(path)
+    print("image_list:", image_list)
+    # Choose Ground Truth image or Downsampled
+    if img_type  == 0:
+        matching = [s for s in image_list if "LR" in s]
+    elif img_type  == 1:
+        matching = [s for s in image_list if "HR" in s]
+    else: #img_type == 2
+        matching = [s for s in image_list if "EDSR" in s]
+    print("matching:", matching)
+    image_path =  str(matching[0])
+    print("image_path:",  image_path)
 
-    image_path = glob.glob(os.path.join(dir_path, "*.png"))
-    # Choose image file in path
-    return image_path[0]
-
-
-logging.getLogger().setLevel(logging.INFO)
-logging.getLogger().addHandler(logging.StreamHandler())
-
-
-class LoggerRequestsDispatcher(object):
-    def __init__(self, *args, **kwargs):
-        logging.info('got init %s %s', args, kwargs)
-
-    def create_new_experiment(self, *args, **kwargs):
-        logging.info('got create_new_experiment %s %s', args, kwargs)
-
-    def send_commands(self, *args, **kwargs):
-        logging.info('got send_commands %s %s', args, kwargs)
+    return image_path
 
 
 # main
@@ -453,7 +444,7 @@ if __name__ == '__main__':
 
     # Path for Data and Output directories on Docker
     output_paths = select_first_dir('/output', './output')
-    file_name = select_first_file()
+    file_name = select_file(img_type=0)
 
     # Provide an alternative to provide MissingLinkAI credential
     parser = argparse.ArgumentParser()
@@ -493,13 +484,13 @@ if __name__ == '__main__':
     image, image_mean = load_img(file_name)
 
     # MissingLink callbacks
-    missinglink_callback = missinglink.KerasCallback(project=args.project, requests_dispatcher=LoggerRequestsDispatcher)
+    missinglink_callback = missinglink.KerasCallback(project=args.project)
     missinglink_callback.set_properties(
         display_name='Keras neural network',
         description='2D fully convolutional neural network for single image super resolution')
     missinglink_callback.set_hyperparams(crop=[W_CROP, H_CROP],
                                          activation=ACTIVATION, sr_factor=SR_FACTOR,
-                                         filters=FILTERS)
+                                         filters=FILTERS, noise_level_LR = NOISY_PIXELS_STD)
 
     # Build and compile model
     zssr = build_model()
@@ -522,11 +513,14 @@ if __name__ == '__main__':
     if GROUND_TRUTH:
         # Load Ground-Truth image if one exists
         # TODO add file names parser for ground truth and edsr
-        ground_truth_image, ground_truth_image_mean = load_img(os.getcwd() + '/201HR.png')
-        if BASELINE:
-            EDSR_image, _ = load_img(os.getcwd() + '/201EDSR.png')
+        file_path_ground_truth = select_file(img_type=1)
+        ground_truth_image, ground_truth_image_mean = load_img(file_path_ground_truth)
 
-        print("Interpolate:")
+        cv2.imwrite(output_paths + '/' + '_ground_truth_image.png',
+                    cv2.cvtColor(ground_truth_image, cv2.COLOR_RGB2BGR),
+                    params=[CV_IMWRITE_PNG_COMPRESSION])
+
+        print("Interpolated:")
         metric_results(ground_truth_image, interpolated_image)
         print("Super image:")
         psnr_score, ssim_score = metric_results(ground_truth_image, super_image)
@@ -534,9 +528,14 @@ if __name__ == '__main__':
         metric_results(ground_truth_image, super_image_accumulated_median)
         print("Super_image_accumulated_avg")
         metric_results(ground_truth_image, super_image_accumulated_avg)
-        print("EDSR")
 
-        metric_results(ground_truth_image, EDSR_image)
+        """In case we have a baseline for comparison such as EDSR we load the baseline-image and compare it with our SR-image """
+        if BASELINE:
+            file_path_EDSR = select_file(img_type=2)
+            EDSR_image, _ = load_img(file_path_EDSR)
+            print("EDSR")
+            metric_results(ground_truth_image, EDSR_image)
+
         #  Setting up the experiment_id so we can later create external metrics
         experiment_id = missinglink_callback.experiment_id
         model_weights_hash = missinglink_callback.calculate_weights_hash(zssr)

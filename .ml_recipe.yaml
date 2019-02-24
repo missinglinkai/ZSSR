@@ -1,8 +1,8 @@
-command: 'python main.py'
-data_volume: 6132366217052160
-data_query: '@version:d1c97413d9843a27bc37a7e533e9657a6c6d6053 @datapoint_by:data_point_id AND data_point_id:1'
+command: 'ls -alR /data; python main.py'
+data_volume: 4515299965534208
+data_query: '@version:48e7e2e722b8f83c34dfe8bbfe1289a678623436 @path:"002/*"'
+#data_dest: '/data/$dir'
 gpu: true
 #image: missinglinkai/tensorflow:latest-gpu-py3
 org: 'missinglinkdemo'
 project: '5109349617762304'
-
