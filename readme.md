@@ -39,6 +39,7 @@ Install dependency libraries:
 pip install -r requirements.txt
 ```
 ## Run
+Sign up to [MissingLink](https://missinglink.ai/)
 
 ### Local
 ```bash
