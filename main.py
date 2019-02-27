@@ -40,7 +40,7 @@ LAYERS_NUM = 6
 # No. of scaling steps. 6 is best value from paper.
 NB_SCALING_STEPS = 1
 # No. of LR_HR pairs
-EPOCHS = NB_PAIRS = 200
+EPOCHS = NB_PAIRS = 5000
 # Default crop size (in the paper: 128*128*3)
 CROP_SIZE = [32,64,96,128]
 # Momentum # default is 0.9 # 0.86 seems to give lowest loss *tested from 0.85-0.95
