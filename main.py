@@ -502,7 +502,7 @@ if __name__ == '__main__':
     missinglink_callback.set_properties(
         display_name='Keras neural network',
         description='2D fully convolutional neural network for single image super resolution')
-    missinglink_callback.set_hyperparams(crop=[CROP_SIZE],
+    missinglink_callback.set_hyperparams(crop=CROP_SIZE,
                                          activation=ACTIVATION, sr_factor=SR_FACTOR,
                                          filters=FILTERS, noise_level_LR = NOISY_PIXELS_STD)
 
