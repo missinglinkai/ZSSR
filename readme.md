@@ -18,6 +18,13 @@ First, updating pip is advised:
 ```bash
 pip install -U pip
 ```
+
+## Installing
+
+Clone this repo:
+```bash
+git clone git@github.com:missinglinkai/ZSSR.git
+```
 You are also strongly recommended to use [virtualenv](https://virtualenv.pypa.io/en/stable/) to create a sandboxed environment for individual Python projects:
 ```bash
 pip install virtualenv
@@ -28,12 +35,7 @@ Create and activate the virtual environment:
 virtualenv .venv
 source .venv/bin/activate
 ```
-## Installing
 
-Clone this repo:
-```bash
-git clone git@github.com:missinglinkai/ZSSR.git
-```
 Install dependency libraries:
 ```bash
 pip install -r requirements.txt
