@@ -61,3 +61,8 @@ Then simply run the project:
 ```bash
 ml run xp
 ```
+To change the input image (data query) 
+open the ".ml_recipe.yaml" file and edit the number after path:
+```python
+data_query: '@version:48e7e2e722b8f83c34dfe8bbfe1289a678623436 @path:071/*'
+```
