@@ -59,7 +59,7 @@ Authenticate your username from the CLI:
 ```bash 
 ml auth init
 ```
-Create a data volume through the UI and use its number to upload the local dataset:
+Create a data volume through the UI and use its ID number to sync the local dataset:
 ```bash
 ml data sync yourDataVolumeID --data-path ~/ZSSR_Images
 ```
