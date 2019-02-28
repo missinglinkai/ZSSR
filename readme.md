@@ -25,7 +25,7 @@ Clone this repo:
 ```bash
 git clone git@github.com:missinglinkai/ZSSR.git
 ```
-You are also strongly recommended to use [virtualenv](https://virtualenv.pypa.io/en/stable/) to create a sandboxed environment for individual Python projects:
+You are strongly recommended to use [virtualenv](https://virtualenv.pypa.io/en/stable/) to create a sandboxed environment for individual Python projects:
 ```bash
 pip install virtualenv
 ```
