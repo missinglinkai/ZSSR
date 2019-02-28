@@ -57,6 +57,18 @@ Authenticate your username from the CLI:
 ```bash 
 ml auth init
 ```
+Create a data volume through the UI and use its number to upload the local dataset:
+```bash
+ml data sync yourDataVolumeID --data-path ~/ZSSR_Images
+```
+Edit the ".ml_recipe.yaml" file and fill in your organization name:
+```python
+command: 'python main.py'
+data_volume: yourDataVolumeID
+data_query: '@version:yourDataVolumeVersion @path:002/*'
+gpu: true
+org: 'yourOrganizationName'
+```
 Then simply run the project:
 ```bash
 ml run xp
