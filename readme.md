@@ -61,7 +61,7 @@ Create a data volume through the UI and use its number to upload the local datas
 ```bash
 ml data sync yourDataVolumeID --data-path ~/ZSSR_Images
 ```
-Edit the ".ml_recipe.yaml" file and fill in your organization name:
+Edit the ".ml_recipe.yaml" file and fill in your Data Volume ID, Data Volume Version and Organization Name:
 ```python
 command: 'python main.py'
 data_volume: yourDataVolumeID
