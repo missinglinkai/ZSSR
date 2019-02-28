@@ -1,8 +1,6 @@
 command: 'python main.py'
 data_volume: 4515299965534208
 data_query: '@version:48e7e2e722b8f83c34dfe8bbfe1289a678623436 @path:002/*'
-#data_dest: '/data/$dir'
 gpu: true
-#image: missinglinkai/tensorflow:latest-gpu-py3
 org: 'missinglinkdemo'
 project: '5109349617762304'
