@@ -49,6 +49,10 @@ Sign up to [MissingLink](https://missinglink.ai/) and follow through the process
 ```bash
 python main.py
 ```
+Running config for example:
+```bash
+python main.py --epochs 2000 --subdir 001
+```
 ### MissingLink with Resource Management
 Follow instructions here:
 [Resource Management](https://missinglink.ai/docs/resource-management/introduction/)
