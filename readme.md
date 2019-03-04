@@ -45,6 +45,10 @@ pip install -r requirements.txt
 ## Run
 Sign up to [MissingLink](https://missinglink.ai/) and follow through the process to view the project on our UI.
 
+Authenticate your username from the CLI:
+```bash 
+ml auth init
+```
 ### Local
 ```bash
 python main.py
@@ -58,11 +62,6 @@ Follow instructions here:
 [Resource Management](https://missinglink.ai/docs/resource-management/introduction/)
 
 After setting up Resource Management:
-
-Authenticate your username from the CLI:
-```bash 
-ml auth init
-```
 Create a data volume through the UI and use its ID number to sync the local dataset:
 ```bash
 ml data sync yourDataVolumeID --data-path ~/ZSSR_Images
