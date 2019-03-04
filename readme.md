@@ -32,7 +32,7 @@ You are strongly recommended to use [virtualenv](https://virtualenv.pypa.io/en/s
 pip install virtualenv
 ```
 
-Create and activate the virtual environment:
+Create and activate the virtual environment inside the project directory:
 ```bash
 virtualenv .venv
 source .venv/bin/activate
