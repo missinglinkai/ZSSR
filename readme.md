@@ -1,3 +1,5 @@
+![alt text](https://github.com/missinglinkai/ZSSR/blob/master/ZSSR_1.png)
+
 # Zero Shot Super Resolution
 
 This repository contains a Keras implementation of the ZSSR project.
@@ -25,7 +27,7 @@ Clone this repo:
 ```bash
 git clone git@github.com:missinglinkai/ZSSR.git
 ```
-You are also strongly recommended to use [virtualenv](https://virtualenv.pypa.io/en/stable/) to create a sandboxed environment for individual Python projects:
+You are strongly recommended to use [virtualenv](https://virtualenv.pypa.io/en/stable/) to create a sandboxed environment for individual Python projects:
 ```bash
 pip install virtualenv
 ```
@@ -47,6 +49,10 @@ Sign up to [MissingLink](https://missinglink.ai/) and follow through the process
 ```bash
 python main.py
 ```
+Running config for example:
+```bash
+python main.py --epochs 2000 --subdir 001
+```
 ### MissingLink with Resource Management
 Follow instructions here:
 [Resource Management](https://missinglink.ai/docs/resource-management/introduction/)
@@ -57,7 +63,26 @@ Authenticate your username from the CLI:
 ```bash 
 ml auth init
 ```
+Create a data volume through the UI and use its ID number to sync the local dataset:
+```bash
+ml data sync yourDataVolumeID --data-path ~/ZSSR_Images
+```
+Edit the ".ml_recipe.yaml" file and fill in your Data Volume ID, Data Volume Version and Organization Name:
+```python
+command: 'python main.py'
+data_volume: yourDataVolumeID
+data_query: '@version:yourDataVolumeVersion @path:002/*'
+gpu: true
+org: 'yourOrganizationName'
+```
 Then simply run the project:
 ```bash
 ml run xp
 ```
+To change the input image (data query) 
+open the ".ml_recipe.yaml" file and edit the DirName after path:
+```python
+data_query: '@version:48e7e2e722b8f83c34dfe8bbfe1289a678623436 @path:DirName/*'
+```
+Optional image directories:
+001		002		003		004		005		007		016		019		020		032		034		039		047		052		067		071		098		100
