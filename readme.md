@@ -82,7 +82,7 @@ ml run xp
 To change the input image (data query) 
 open the ".ml_recipe.yaml" file and edit the DirName after path:
 ```python
-data_query: '@version:48e7e2e722b8f83c34dfe8bbfe1289a678623436 @path:DirName/*'
+data_query: '@version:yourDataVolumeVersion @path:DirName/*'
 ```
 Optional image directories:
 001		002		003		004		005		007		016		019		020		032		034		039		047		052		067		071		098		100
