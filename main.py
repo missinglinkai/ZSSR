@@ -22,7 +22,7 @@ SR_FACTOR = 2
 # Activation layer
 ACTIVATION = 'relu'
 # Data generator random ordered
-SHUFFLE = True
+SHUFFLE = False
 # scaling factors array order random or sorted
 SORT = True
 # Ascending or Descending: 'A' or 'D'
@@ -34,13 +34,13 @@ BATCH_SIZE = 1
 # Number of channels in signal
 NB_CHANNELS = 3
 # No. of NN filters per layer
-FILTERS = 100  # 64 on the paper
+FILTERS = 64  # 64 on the paper
 # Number of internal convolutional layers
 LAYERS_NUM = 6
 # No. of scaling steps. 6 is best value from paper.
 NB_SCALING_STEPS = 1
 # No. of LR_HR pairs
-EPOCHS = NB_PAIRS = 5000
+EPOCHS = NB_PAIRS = 1500
 # Default crop size (in the paper: 128*128*3)
 CROP_SIZE = [32,64,96,128]
 # Momentum # default is 0.9 # 0.86 seems to give lowest loss *tested from 0.85-0.95
@@ -66,17 +66,21 @@ SCALING_BIAS = 1
 BLUR_LOW = 0.4
 BLUR_HIGH = 0.95
 # Add noise or not to transformations
-NOISE_FLAG = True
+NOISE_FLAG = False
 # Mean pixel noise added to lr sons
 NOISY_PIXELS_STD = 30
 # Save augmentations
 SAVE_AUG = False
 # If there's a ground truth image. Add to parse.
-GROUND_TRUTH = False
+GROUND_TRUTH = True
 # If there's a baseline image. Add to parse.
 BASELINE = True
 # png compression ratio: best quality
 CV_IMWRITE_PNG_COMPRESSION = 9
+
+ORIGIN_IMAGE = 0
+GROUND_TRUTH_IMAGE = 1
+BASELINE_IMAGE = 2
 
 # ---FUNCTIONS---#
 
@@ -99,11 +103,10 @@ def load_img(file_name):
     image = image.astype('float32')
     #    # Normalize img data
     #	image = image/255.0
-    image_mean = np.mean(image, dtype='float32')
+    # image_mean = np.mean(image, dtype='float32')
     #	image = (image - image.mean()) / image.std()
-    #	plot_image(image)
-    return image, image_mean
-
+#	plot_image(image)
+    return image
 
 # Add noise to lr sons
 """ 0 is the mean of the normal distribution you are choosing from
@@ -416,24 +419,29 @@ def select_first_dir(*dirs):
 
 def select_file(img_type,subdir):
     import glob
-
-    dir_path = select_first_dir('/data', './ZSSR_Images' + subdir)
+    path_subdir = os.path.join('./ZSSR_Images', subdir)
+    dir_path = select_first_dir('/data', path_subdir)
     path = os.path.join(dir_path, "*.png")
     print("path choice:",path)
     image_list = glob.glob(path)
     print("image_list:", image_list)
     # Choose Ground Truth image or Downsampled
-    if img_type  == 0:
+    if img_type == 0:
         matching = [s for s in image_list if "LR" in s]
-    elif img_type  == 1:
+    elif img_type == 1:
         matching = [s for s in image_list if "HR" in s]
-    else: #img_type == 2
+    else:  # img_type == 2
         matching = [s for s in image_list if "EDSR" in s]
     print("matching:", matching)
-    image_path =  str(matching[0])
-    print("image_path:",  image_path)
+
+    try:
+        image_path = str(matching[0])
+    except IndexError:
+        image_path = 'null'
+    print("image_path:", image_path)
 
     return image_path
+
 
 def mk_dir(dir_name):
     if not os.path.exists(dir_name):
@@ -485,18 +493,20 @@ if __name__ == '__main__':
     # We're making sure These parameters are equal, in case of an update from the parser.
     NB_PAIRS = EPOCHS
     EPOCHS_DROP = np.ceil((NB_STEPS * EPOCHS) / NB_SCALING_STEPS)
-
+    psnr_score = None
+    ssim_score = None
+    metrics_ratio = None
 
     # Path for Data and Output directories on Docker
     output_paths = select_first_dir('/output', './output')
     if (output_paths == './output'):
         mk_dir(dir_name='./output')
-    img_type = 0
-    file_name = select_file(img_type, subdir)
+    file_name = select_file(ORIGIN_IMAGE, subdir)
 
     # Load image from data volumes
-    image, image_mean = load_img(file_name)
-
+    image = load_img(file_name)
+    cv2.imwrite(output_paths + '/'  + 'image.png',
+                cv2.cvtColor(image, cv2.COLOR_RGB2BGR), params=[CV_IMWRITE_PNG_COMPRESSION])
     # MissingLink callbacks
     missinglink_callback = missinglink.KerasCallback(project=args.project)
     missinglink_callback.set_properties(
@@ -526,32 +536,41 @@ if __name__ == '__main__':
     # Compare to ground-truth if exists
     if GROUND_TRUTH:
         # Load Ground-Truth image if one exists
-        # TODO add file names parser for ground truth and edsr
-        file_path_ground_truth = select_file(img_type=1)
-        ground_truth_image, ground_truth_image_mean = load_img(file_path_ground_truth)
+        try:
+            file_path_ground_truth = select_file(GROUND_TRUTH_IMAGE, subdir)
+            if os.path.isfile(file_path_ground_truth):
+                ground_truth_image = load_img(file_path_ground_truth)
+                cv2.imwrite(output_paths + '/' + '_ground_truth_image.png',
+                        cv2.cvtColor(ground_truth_image, cv2.COLOR_RGB2BGR),
+                        params=[CV_IMWRITE_PNG_COMPRESSION])
 
-        cv2.imwrite(output_paths + '/' + '_ground_truth_image.png',
-                    cv2.cvtColor(ground_truth_image, cv2.COLOR_RGB2BGR),
-                    params=[CV_IMWRITE_PNG_COMPRESSION])
-
-        print("Interpolated:")
-        metric_results(ground_truth_image, interpolated_image)
-        print("Super image:")
-        psnr_score, ssim_score = metric_results(ground_truth_image, super_image)
-        print("Super_image_accumulated_median")
-        metric_results(ground_truth_image, super_image_accumulated_median)
-        print("Super_image_accumulated_avg")
-        metric_results(ground_truth_image, super_image_accumulated_avg)
-
-        """In case we have a baseline for comparison such as EDSR we load the baseline-image and compare it with our SR-image """
-        if BASELINE:
-            file_path_EDSR = select_file(img_type=2)
-            EDSR_image, _ = load_img(file_path_EDSR)
-            print("EDSR")
-            metric_results(ground_truth_image, EDSR_image)
-
+                print("Interpolated:")
+                metric_results(ground_truth_image, interpolated_image)
+                print("Super image:")
+                psnr_score, ssim_score = metric_results(ground_truth_image, super_image)
+                print("Super_image_accumulated_median")
+                metric_results(ground_truth_image, super_image_accumulated_median)
+                print("Super_image_accumulated_avg")
+                metric_results(ground_truth_image, super_image_accumulated_avg)
+            else:
+                print("No Ground Truth Image")
+        except:
+            pass
+                # In case we have a baseline for comparison such as EDSR we load the baseline-image and compare it with our SR-image
+            if BASELINE:
+                try:
+                    file_path_EDSR = select_file(BASELINE_IMAGE, subdir)
+                    if os.path.isfile(file_path_EDSR):
+                        EDSR_image, _ = load_img(file_path_EDSR)
+                        print("EDSR")
+                        psnr_score_EDSR, _ = metric_results(ground_truth_image, EDSR_image)
+                        metrics_ratio = psnr_score / psnr_score_EDSR
+                    else:
+                        print("No Baseline Image")
+                except:
+                    pass
         #  Setting up the experiment_id so we can later create external metrics
-        experiment_id = missinglink_callback.experiment_id
-        model_weights_hash = missinglink_callback.calculate_weights_hash(zssr)
-        metrics = {'psnr': psnr_score, 'SSIM': ssim_score}
-        missinglink_callback.update_metrics(metrics, experiment_id=experiment_id)
+    experiment_id = missinglink_callback.experiment_id
+    model_weights_hash = missinglink_callback.calculate_weights_hash(zssr)
+    metrics = {'psnr': psnr_score, 'SSIM': ssim_score, 'ZSSR_EDSR_psnr_ratio': metrics_ratio}
+    missinglink_callback.update_metrics(metrics, experiment_id=experiment_id)
