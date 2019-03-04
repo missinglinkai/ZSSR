@@ -53,7 +53,7 @@ Running config for example:
 ```bash
 python main.py --epochs 2000 --subdir 001
 ```
-### MissingLink with Resource Management
+## MissingLink with Resource Management
 Follow instructions here:
 [Resource Management](https://missinglink.ai/docs/resource-management/introduction/)
 
