@@ -431,11 +431,13 @@ def select_first_dir(*dirs):
 def select_file(img_type,subdir):
     # save to disk
     if os.environ.get('ML'):
-        path_input = 'data'
+        path_input = '/data'
+        path = os.path.join(path_input, '*.png')
     else:
-        path_input = os.getcwd()
+        path_input = './ZSSR_Images'
+        path = os.path.join(path_input, subdir, '*.png')
 
-    path = os.path.join(path_input, 'ZSSR_Images', subdir, '*.png')
+    # path = os.path.join(path_input, subdir, '*.png')
     # dir_path = select_first_dir('/data', path_subdir)
 
     # path = os.path.join(path_subdir, "*.png")
