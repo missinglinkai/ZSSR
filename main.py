@@ -5,11 +5,12 @@ import numpy as np
 import cv2
 import os
 import keras
-from keras.callbacks import LearningRateScheduler
+from keras.callbacks import LearningRateScheduler, ModelCheckpoint
 from keras.models import Model
 from keras.layers import Conv2D, Input
 from skimage.measure import compare_ssim as ssim
 from skimage.measure import compare_psnr
+import glob
 import missinglink
 
 """
@@ -42,7 +43,7 @@ NB_SCALING_STEPS = 1
 # No. of LR_HR pairs
 EPOCHS = NB_PAIRS = 1500
 # Default crop size (in the paper: 128*128*3)
-CROP_SIZE = [32,64,96,128]
+CROP_SIZE = [96]#[32,64,96,128]
 # Momentum # default is 0.9 # 0.86 seems to give lowest loss *tested from 0.85-0.95
 BETA1 = 0.90  # 0.86
 # Adaptive learning rate
@@ -70,7 +71,7 @@ NOISE_FLAG = False
 # Mean pixel noise added to lr sons
 NOISY_PIXELS_STD = 30
 # Save augmentations
-SAVE_AUG = False
+SAVE_AUG = True
 # If there's a ground truth image. Add to parse.
 GROUND_TRUTH = True
 # If there's a baseline image. Add to parse.
@@ -131,33 +132,43 @@ def preprocess(image, scale_fact, scale_fact_inter, i):
     # Create hr father by downscaling from the original image
     hr = cv2.resize(image, None, fx=scale_fact, fy=scale_fact, interpolation=cv2.INTER_CUBIC)
     # Crop the HR father to reduce computation cost and set the training independent from image size
+    print("hr before crop:", hr.shape[0], hr.shape[1])
     if CROP_FLAG:
         h_crop = w_crop = np.random.choice(CROP_SIZE)
         print("h_crop, w_crop:", h_crop, w_crop)
         if (hr.shape[0] > h_crop):
-            x0 = np.random.randint(0, np.abs(h_crop - hr.shape[0]))
+            x0 = np.random.randint(0, hr.shape[0] - h_crop)
             h = h_crop
         else:
-            x0 = np.random.randint(0, np.int(hr.shape[0] / 2))
-            h = np.random.randint((np.int(hr.shape[0] / 2 + 1)), (np.int(hr.shape[0])))
+            x0 = 0
+            h = hr.shape[0]
         if (hr.shape[1] > w_crop):
-            x1 = np.random.randint(0, np.abs(w_crop - hr.shape[1]))
+            x1 = np.random.randint(0, hr.shape[1] - w_crop)
             w = w_crop
         else:
-            x1 = np.random.randint(0, np.int(hr.shape[1] / 2))
-            w = np.random.randint((np.int(hr.shape[1] / 2 + 1)), (np.int(hr.shape[1])))
-        hr = hr[x0:x0 + h, x1:x1 + w]
+            x1 = 0
+            w = hr.shape[1]
+        hr = hr[x0 : x0 + h, x1 : x1 + w]
+        print("hr body:", x0, x0 + h, x1, x1 + w)
+        print("hr shape:", hr.shape[0], hr.shape[1])
+
 
     if FLIP_FLAG:
         # flip
         """ TODO check if 4 is correct or if 8 is better.
         Maybe change to np functions, as in predict permutations."""
 
-        if np.random.choice(4):
-            flip_type = np.random.choice([1, 0, -1])
-            hr = cv2.flip(hr, flip_type)
-            if np.random.choice(2):
-                hr = cv2.transpose(hr)
+        # if np.random.choice(4):
+        #     flip_type = np.random.choice([1, 0, -1])
+        #     hr = cv2.flip(hr, flip_type)
+        #     if np.random.choice(2):
+        #         hr = cv2.transpose(hr)
+        k = np.random.choice(8)
+        print(k)
+        hr = np.rot90(hr, k, axes=(0, 1))
+        if (k > 3):
+            hr = np.fliplr(hr)
+
         # lr = cv2.flip( lr, flip_type )
 
     # hr is cropped and flipped then copies as lr
@@ -320,11 +331,11 @@ def metric_results(ground_truth_image, super_image):
         psnr_score = psnr_calc(ground_truth_image, super_image, SR_FACTOR)
         ssim_score = ssim_calc(ground_truth_image, super_image, SR_FACTOR)
 
-        return psnr_score, ssim_score
     except NameError:
         psnr_score = None
         ssim_score = None
-        return psnr_score, ssim_score
+
+    return psnr_score, ssim_score
 
 
 "This function creates a super resolution image and a simple interpolated image. returns and saves both of them."
@@ -369,7 +380,7 @@ def accumulated_result(image):
     # Get super res image from the NN's output
     super_image_list = []
     for k in range(0, 8):
-        print(k)
+        print("k", k)
         img = np.rot90(int_image, k, axes=(0, 1))
         if (k > 3):
             print("flip")
@@ -418,10 +429,17 @@ def select_first_dir(*dirs):
 
 
 def select_file(img_type,subdir):
-    import glob
-    path_subdir = os.path.join('./ZSSR_Images', subdir)
-    dir_path = select_first_dir('/data', path_subdir)
-    path = os.path.join(dir_path, "*.png")
+    # save to disk
+    if os.environ.get('ML'):
+        path_input = 'data'
+    else:
+        path_input = os.getcwd()
+
+    path = os.path.join(path_input, 'ZSSR_Images', subdir, '*.png')
+    # dir_path = select_first_dir('/data', path_subdir)
+
+    # path = os.path.join(path_subdir, "*.png")
+
     print("path choice:",path)
     image_list = glob.glob(path)
     print("image_list:", image_list)
@@ -460,7 +478,7 @@ if __name__ == '__main__':
     parser.add_argument('--srFactor', type=int)
     parser.add_argument('--epochs', type=int, default=EPOCHS)
     #parser.add_argument('--filepath', type=str)
-    parser.add_argument('--subdir', type=str, default="")
+    parser.add_argument('--subdir', type=str, default='067')
     parser.add_argument('--filters', type=int, default=FILTERS)
     parser.add_argument('--activation', default=ACTIVATION)
     parser.add_argument('--shuffle', default=SHUFFLE)
@@ -472,6 +490,7 @@ if __name__ == '__main__':
     parser.add_argument('--baseline', default=BASELINE)
     parser.add_argument('--flip', default=FLIP_FLAG)
     parser.add_argument('--noiseFlag', default=False)
+    parser.add_argument('--noiseSTD', type = int, default=30)
     parser.add_argument('--project')
     # Override credential values if provided as arguments
     args = parser.parse_args()
@@ -490,6 +509,7 @@ if __name__ == '__main__':
     BASELINE = args.baseline or BASELINE
     FLIP_FLAG = args.flip or FLIP_FLAG
     NOISE_FLAG = args.noiseFlag or NOISE_FLAG
+    NOISY_PIXELS_STD = args.noiseSTD or NOISY_PIXELS_STD
     # We're making sure These parameters are equal, in case of an update from the parser.
     NB_PAIRS = EPOCHS
     EPOCHS_DROP = np.ceil((NB_STEPS * EPOCHS) / NB_SCALING_STEPS)
@@ -498,15 +518,25 @@ if __name__ == '__main__':
     metrics_ratio = None
 
     # Path for Data and Output directories on Docker
-    output_paths = select_first_dir('/output', './output')
-    if (output_paths == './output'):
-        mk_dir(dir_name='./output')
-    file_name = select_file(ORIGIN_IMAGE, subdir)
+    # save to disk
+    if os.environ.get('ML'):
+        output_paths = '/output'
+    else:
+        output_paths = os.path.join(os.getcwd(), 'output')
+        if not os.path.exists(output_paths):
+            os.makedirs(output_paths)
+    print (output_paths)
+    # output_paths = select_first_dir('/output', './output')
+    # if (output_paths == './output'):
+    #     mk_dir(dir_name='./output')
 
+    file_name = select_file(ORIGIN_IMAGE, subdir)
+    print(file_name)
     # Load image from data volumes
     image = load_img(file_name)
     cv2.imwrite(output_paths + '/'  + 'image.png',
                 cv2.cvtColor(image, cv2.COLOR_RGB2BGR), params=[CV_IMWRITE_PNG_COMPRESSION])
+
     # MissingLink callbacks
     missinglink_callback = missinglink.KerasCallback(project=args.project)
     missinglink_callback.set_properties(
@@ -521,7 +551,12 @@ if __name__ == '__main__':
     # Learning rate scheduler
     lrate = LearningRateScheduler(step_decay)
     # Callbacklist
-    callbacksList = [lrate, missinglink_callback]
+    # checkpoint
+    # filepath = "/output/weights-improvement-{epoch:02d}-{val_acc:.2f}.hdf5"
+    #
+    # checkpoint = ModelCheckpoint(filepath, monitor='loss', verbose=1, save_best_only=True, mode='max')
+
+    callbacksList = [lrate, missinglink_callback] #, checkpoint
     # TRAIN
     history = zssr.fit_generator(image_generator(image, NB_PAIRS, BATCH_SIZE, NB_SCALING_STEPS),
                                  steps_per_epoch=NB_STEPS, epochs=EPOCHS, shuffle=SHUFFLE, callbacks=callbacksList)
@@ -557,18 +592,23 @@ if __name__ == '__main__':
         except:
             pass
                 # In case we have a baseline for comparison such as EDSR we load the baseline-image and compare it with our SR-image
-            if BASELINE:
-                try:
-                    file_path_EDSR = select_file(BASELINE_IMAGE, subdir)
-                    if os.path.isfile(file_path_EDSR):
-                        EDSR_image, _ = load_img(file_path_EDSR)
-                        print("EDSR")
-                        psnr_score_EDSR, _ = metric_results(ground_truth_image, EDSR_image)
+        if BASELINE:
+            try:
+                file_path_EDSR = select_file(BASELINE_IMAGE, subdir)
+                if os.path.isfile(file_path_EDSR):
+                    EDSR_image = load_img(file_path_EDSR)
+                    print("EDSR")
+                    cv2.imwrite(output_paths + '/' + '_ESDR.png',
+                                cv2.cvtColor(EDSR_image, cv2.COLOR_RGB2BGR),
+                                params=[CV_IMWRITE_PNG_COMPRESSION])
+                    psnr_score_EDSR, _ = metric_results(ground_truth_image, EDSR_image)
+                    if (psnr_score and psnr_score_EDSR) is not None:
                         metrics_ratio = psnr_score / psnr_score_EDSR
-                    else:
-                        print("No Baseline Image")
-                except:
-                    pass
+                        print("Metrics_ratio: ", metrics_ratio)
+                else:
+                    print("No Baseline Image")
+            except:
+                pass
         #  Setting up the experiment_id so we can later create external metrics
     experiment_id = missinglink_callback.experiment_id
     model_weights_hash = missinglink_callback.calculate_weights_hash(zssr)

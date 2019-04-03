@@ -1,6 +1,8 @@
-command: 'python main.py --git-repo git@github.com:missinglinkai/ZSSR-shadow-repo.git'
+#--git-repo git@github.com:missinglinkai/ZSSR-shadow-repo.git
+command: 'python main.py'
+#git_repo: 'git@github.com:missinglinkai/ZSSR-shadow-repo.git'
 data_volume: 4515299965534208
-data_query: '@version:48e7e2e722b8f83c34dfe8bbfe1289a678623436 @path:002/*'
+data_query: '@version:48e7e2e722b8f83c34dfe8bbfe1289a678623436 @path:067/*'
 gpu: true
 org: 'missinglinkdemo'
 project: '5109349617762304'
