@@ -14,8 +14,6 @@ for development and testing purposes. See deployment for notes on how to deploy 
 ## Prerequisites
 You need Python 3.6.8 on your system to run this example.
 
-To install the dependency:
-
 First, updating pip is advised:
 ```bash
 pip install -U pip
