@@ -564,7 +564,7 @@ if __name__ == '__main__':
                                  steps_per_epoch=NB_STEPS, 
                                  epochs=EPOCHS, 
                                  shuffle=SHUFFLE, 
-                                 callbacks=callbacksList
+                                 callbacks=callbacksList,
                                  max_queue_size=32,
                                  workers=16,
                                  use_multiprocessing=False,
