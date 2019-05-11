@@ -45,6 +45,8 @@ Install dependency libraries:
 ```bash
 pip install -r requirements.txt
 ```
+* To run local uncomment "tensorflow" in the requiremnets.txt file before installing.
+
 ## Run
 Sign up to [MissingLink](https://missinglink.ai/) and follow through the process to view the project on our UI.
 
