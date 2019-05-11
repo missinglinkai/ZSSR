@@ -566,8 +566,6 @@ if __name__ == '__main__':
                                  shuffle=SHUFFLE, 
                                  callbacks=callbacksList,
                                  max_queue_size=32,
-                                 workers=16,
-                                 use_multiprocessing=False,
                                  verbose=1)
     # Saving our model and weights
     zssr.save(output_paths + '/zssr_model.h5')
