@@ -132,10 +132,10 @@ def preprocess(image, scale_fact, scale_fact_inter, i):
     # Create hr father by downscaling from the original image
     hr = cv2.resize(image, None, fx=scale_fact, fy=scale_fact, interpolation=cv2.INTER_CUBIC)
     # Crop the HR father to reduce computation cost and set the training independent from image size
-    print("hr before crop:", hr.shape[0], hr.shape[1])
+    #print("hr before crop:", hr.shape[0], hr.shape[1])
     if CROP_FLAG:
         h_crop = w_crop = np.random.choice(CROP_SIZE)
-        print("h_crop, w_crop:", h_crop, w_crop)
+        #print("h_crop, w_crop:", h_crop, w_crop)
         if (hr.shape[0] > h_crop):
             x0 = np.random.randint(0, hr.shape[0] - h_crop)
             h = h_crop
@@ -149,8 +149,8 @@ def preprocess(image, scale_fact, scale_fact_inter, i):
             x1 = 0
             w = hr.shape[1]
         hr = hr[x0 : x0 + h, x1 : x1 + w]
-        print("hr body:", x0, x0 + h, x1, x1 + w)
-        print("hr shape:", hr.shape[0], hr.shape[1])
+        #print("hr body:", x0, x0 + h, x1, x1 + w)
+        #print("hr shape:", hr.shape[0], hr.shape[1])
 
 
     if FLIP_FLAG:
