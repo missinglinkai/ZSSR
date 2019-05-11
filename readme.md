@@ -27,7 +27,8 @@ git clone git@github.com:missinglinkai/ZSSR.git
 ```
 Change directory:
 ```bash
-cd ZSSR-master```
+cd ZSSR-master
+```
 
 You are strongly recommended to use [virtualenv](https://virtualenv.pypa.io/en/stable/) to create a sandboxed environment for individual Python projects:
 ```bash
