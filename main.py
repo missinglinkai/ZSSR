@@ -561,7 +561,14 @@ if __name__ == '__main__':
     callbacksList = [lrate, missinglink_callback] #, checkpoint
     # TRAIN
     history = zssr.fit_generator(image_generator(image, NB_PAIRS, BATCH_SIZE, NB_SCALING_STEPS),
-                                 steps_per_epoch=NB_STEPS, epochs=EPOCHS, shuffle=SHUFFLE, callbacks=callbacksList)
+                                 steps_per_epoch=NB_STEPS, 
+                                 epochs=EPOCHS, 
+                                 shuffle=SHUFFLE, 
+                                 callbacks=callbacksList
+                                 max_queue_size=32,
+                                 workers=16,
+                                 use_multiprocessing=False,
+                                 verbose=1)
     # Saving our model and weights
     zssr.save(output_paths + '/zssr_model.h5')
     # PREDICT
