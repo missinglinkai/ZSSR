@@ -260,7 +260,7 @@ def step_decay(epochs):
         step_length = epochs_drop
 
     lrate = initial_lrate * np.power(drop, np.floor((1 + np.mod(epochs, cycle)) / step_length))
-    print("lrate", lrate)
+    #print("lrate", lrate)
     return lrate
 
 
