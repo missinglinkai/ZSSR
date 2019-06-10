@@ -23,7 +23,7 @@ pip install -U pip
 
 Clone this repo:
 ```bash
-git clone git@github.com:missinglinkai/ZSSR.git
+git clone https://github.com/missinglinkai/ZSSR.git
 ```
 Change directory:
 ```bash
